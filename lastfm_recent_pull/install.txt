@@ -1,0 +1,267 @@
+##############################################################################
+# Copyright (c) 2011, Gary Gogick
+# All rights reserved.
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#    * Redistributions of source code must retain the above copyright
+#      notice, this list of conditions and the following disclaimer.
+#    * Redistributions in binary form must reproduce the above copyright
+#      notice, this list of conditions and the following disclaimer in the
+#      documentation and/or other materials provided with the distribution.
+#    * Neither the name of the copyright holder nor the names of its
+#      contributors may be used to endorse or promote products derived from
+#      this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
+# ARE DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF 
+# THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+##############################################################################
+
+
+
+OVERVIEW
+--------
+
+This is a pair of scripts to handle pulling recently played tracks for a
+Last.fm user into a MySQL database, where the data can be used for nefarious
+purposes such as displaying recently played tracks on your website about your
+cat.
+
+The script pulls the following data on a song-per-song basis:
+
+	- Song Title
+	- Artist Name
+	- Album Title
+	- Time Played
+	- Last.fm URL
+
+It does NOT import things such as album covers, et cetera.
+
+The lastfm_pull.pl script handles contact to the Last.fm API, data retrieval,
+and insertion into MySQL.  It does not import currently playing songs; only
+those which have finished playing.  Error/other logging is passed to syslog.
+
+The lastfm_clean.pl script is optional; it's for purging older data from the
+MySQL database, in the event that you're worried about data size growth.
+Error/other logging is passed to syslog.
+
+Finally, import.sql contains SQL statements used to create the two tables
+required by the scripts.
+
+
+
+MySQL DATABASE CONFIGURATION
+----------------------------
+
+SQL for initial table creation is provided in 'import.sql', you can apply this
+to your database via the following command:
+
+	$ mysql -hDATABASE_HOST -uUSERNAME -p DATABASE_NAME < import.sql
+
+...Where DATABASE_HOST is the location of your MySQL server, USERNAME is your
+MySQL user for the database, and DATABASE_NAME is the MySQL database in question.
+
+The import script is set to create two tables named 'lastfm_stat' and
+'lastfm_play'.  If you wish to change the names of these tables, you'll need
+to either modify the import script or create the tables manually.  You'll also
+want to change the table names in the lastfm_pull.pl and lastfm_clean.pl
+scripts.
+
+
+
+lastfm_pull.pl CONFIGURATION
+----------------------------
+
+The script is easy to configure; simply hit up the 'Configuration' section and
+start filling out your variables.
+
+$last_username
+	This is the username of the Last.fm user you want to monitor recent
+plays for.  Usually, your own username.
+
+$last_apikey
+	This is your Last.fm API key.  You do have one, don't you?  If not,
+simply log into Last.fm and hit up http://www.last.fm/api/account - you just
+need to fill out some basic information and you'll be granted an API key
+instantly.
+
+$mysql_server
+	The location of your MySQL server; this is usually either 'localhost' or
+'127.0.0.1'.
+
+$mysql_user
+	The MySQL user to use for database access.  The user should have
+permission to select/insert/update from the accompanying  tables.
+
+$mysql_pass
+	The MySQL password for the aforementioned user.
+
+$mysql_db
+	The MySQL database to use.  Note that you should either run the
+accompanying import script against this database or create the tables manually
+before running the importer.
+
+$mysql_stat_table
+	By default, 'lastfm_stat'.  If you change this, you will have to
+create the table manually or modify the import script yourself.
+
+$mysql_play_table
+	By default, 'lastfm_play'.  If you change this, you will have to
+create the table manually or modify the import script yourself.
+
+$debug
+	By default, 0.  Set this to 1 to see additional logging output to
+syslog, such as song data to be imported.
+
+
+
+lastfm_pull.pl EXECUTION
+------------------------
+
+Ideally, you'll want to invoke lastfm_pull.pl via cron.  I run the following:
+
+	*/10 * * * * /usr/bin/perl -CS ~/cron-scripts/lastfm_pull.pl > /dev/null 2>&1
+
+The -CS is vaguely important if you want UTF8 support to work properly -
+Last.fm handles UTF8, and you should too.  I find running every ten minutes
+gives a nice balance between utilization and making sure you're not missing
+any data.
+
+Keep in mind that the script should not reside within the document root of a
+website.
+
+
+
+lastfm_clean.pl CONFIGURATION
+-----------------------------
+
+The script is easy to configure; simply hit up the 'Configuration' section and
+start filling out your variables.
+
+$mysql_server
+	The location of your MySQL server; this is usually either 'localhost'
+or '127.0.0.1'.
+
+$mysql_user
+	The MySQL user to use for database access.  The user should have
+permission to select/insert/update from the accompanying  tables.
+
+$mysql_pass
+	The MySQL password for the aforementioned user.
+
+$mysql_db
+	The MySQL database to use.  Note that you should either run the
+accompanying import script against this database or create the tables manually
+before running the importer.
+
+$mysql_stat_table
+	By default, 'lastfm_stat'.  If you change this, you will have to
+create the table manually or modify the import script yourself.
+
+$mysql_play_table
+	By default, 'lastfm_play'.  If you change this, you will have to
+create the table manually or modify the import script yourself.
+
+***Note that the MySQL settings should obviously match the settings you've
+declared in lastfm_pull.pl***
+
+$trim
+	The number of seconds prior to the newest track played to start
+trimming.   Data is trimmed in a backwards fashion; that is, if you set $trim
+to a day, it will start at a day prior to the newest track played, and drop
+any records *before* that time.
+
+	There are several variables already defined that $trim can be set to:
+
+		$SDAY	- 86400 seconds, one day
+		$SWEEK  - Seven days
+		$SMONTH - Thirty days
+		$SYEAR  - Three hundred sixty five days
+
+$debug
+	By default, 0.  Set this to 1 to see additional logging output to
+syslog, such as song data to be imported.
+
+
+
+lastfm_clean.pl EXECUTION
+-------------------------
+
+Ideally, you'll want to invoke lastfm_clean.pl via cron.  I run the following:
+
+	0 1 * * 0 /usr/bin/perl ~/cron-scripts/lastfm_clean.pl > /dev/null 2>&1
+
+This runs at 1AM every Sunday.  I've got my lastfm_clean script to purge
+week-old data.  Naturally, you may want to modify the cron invocation time
+depending on what you're purging - if you want to purge data older than a day,
+you'll need to run the script at least once a day.
+
+Keep in mind that the script should not reside within the document root of a
+website.
+
+
+
+QUICK'N DIRTY WORDPRESS INTEGRATION
+-----------------------------------
+
+While the point of dumping this data to MySQL is that it can be easily used by
+anything, I started out with this in order to display my last played tracks on
+my blaaaagh (which is not about my cat).
+
+I added the following to my theme's functions.php:
+
+	function lfm_get_recent_plays($num = 5) {
+	        global $wpdb;
+	
+	        // Set the limit clause, if we got a limit
+	        $num = (int) $num;
+        	if ($num ) {
+	                $limit = "LIMIT $num";
+        	}
+
+	        $sql = "SELECT play_title, play_artist, play_time FROM lastfm_play ORDER BY play_time DESC $limit";
+	        $result = $wpdb->get_results($sql, ARRAY_A);
+
+        	return $result ? $result : array();
+	}
+
+In this case, I've no need for play_url; but it could easily be added to the
+SELECT statement.
+
+I then invoked the function and formatted it in the actual theme template:
+
+	<div id="lastfm">
+	<h3>Last.fm</h3>
+		<ul>
+		<?php
+			$recent_tracks = lfm_get_recent_plays(5);
+			foreach($recent_tracks as $track) {
+				echo '<li><span class="time">' . date('m.d.Y H:i', $track["play_time"]) . ':</span> ' . $track["play_artist"] . ' - ' . $track["play_title"] . '</li>';
+			}
+		?>
+		</ul>
+	</div>
+
+This invocation grabs the latest five tracks from the database, and shoves
+them into list item elements in the format of MM.DD.YYYY: ARTIST - SONG.  You 
+can, of course, fully display and style the data however you'd like.
+
+
+
+POTENTIAL IMPROVEMENTS
+----------------------
+
+No guarantees that I'll ever add any of the following features, but they're on
+my list of, 'That'd be kind of nice.':
+
+	- Handle 'currently playing' tracks
+	- Select number of tracks to pull, rather than just 10
+	- Push configuration out into a separate file
