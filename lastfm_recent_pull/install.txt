@@ -188,7 +188,7 @@ any records *before* that time.
 
 $debug
 	By default, 0.  Set this to 1 to see additional logging output to
-syslog, such as song data to be imported.
+syslog, such as number of records purged.
 
 
 
@@ -199,7 +199,7 @@ Ideally, you'll want to invoke lastfm_clean.pl via cron.  I run the following:
 
 	0 1 * * 0 /usr/bin/perl ~/cron-scripts/lastfm_clean.pl > /dev/null 2>&1
 
-This runs at 1AM every Sunday.  I've got my lastfm_clean script to purge
+This runs at 1AM every Sunday.  I've got my lastfm_clean script set to purge
 week-old data.  Naturally, you may want to modify the cron invocation time
 depending on what you're purging - if you want to purge data older than a day,
 you'll need to run the script at least once a day.
