@@ -1,0 +1,185 @@
+##############################################################################
+# Copyright (c) 2011, Gary Gogick
+# All rights reserved.
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#    * Redistributions of source code must retain the above copyright
+#      notice, this list of conditions and the following disclaimer.
+#    * Redistributions in binary form must reproduce the above copyright
+#      notice, this list of conditions and the following disclaimer in the
+#      documentation and/or other materials provided with the distribution.
+#    * Neither the name of the copyright holder nor the names of its
+#      contributors may be used to endorse or promote products derived from
+#      this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
+# ARE DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF 
+# THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+##############################################################################
+
+
+
+OVERVIEW
+--------
+
+This is a script to handle pulling recent activity on Github (eg, from a
+user's
+public atom feed) into a MySQL database, where the data can be used for
+nefarious purposes such as displaying said data on your website about your
+cat.
+
+The script pulls the following data:
+
+	- Activity Title
+	- Activity Time
+	- Limited Activity Content
+
+That's all it does.  Activity Content is limited to anything returned in the
+atom feed's 'content' block that's surrounded by blockquote tags.  This allows
+for additional useful data to be made available, without the horrors of
+the atom feed's more broken components - useless cruft, links without a
+domain reference, allusions to 'Someone' committing, et cetera.
+
+The github_pull.pl script handles contact to a Github public atom feed, data
+retrieval, and insertion into MySQL.  Error/other logging is passed to 
+syslog.
+
+import.sql contains SQL statements used to create the two tables required by
+the script.
+
+
+
+MySQL DATABASE CONFIGURATION
+----------------------------
+
+SQL for initial table creation is provided in 'import.sql', you can apply this
+to your database via the following command:
+
+	$ mysql -hDATABASE_HOST -uUSERNAME -p DATABASE_NAME < import.sql
+
+...Where DATABASE_HOST is the location of your MySQL server, USERNAME is your
+MySQL user for the database, and DATABASE_NAME is the MySQL database in question.
+
+The import script is set to create two tables named 'github_stat' and
+'github_activity'.  If you wish to change the names of these tables, you'll need
+to either modify the import script or create the tables manually.  You'll also
+want to change the table names in the github_pull.pl script.
+
+
+
+github_pull.pl CONFIGURATION
+----------------------------
+
+The script is easy to configure; simply hit up the 'Configuration' section and
+start filling out your variables.
+
+$github_username
+	This is the username of the github user you want to monitor the public
+atom feed for.  Usually, your own username.
+
+$mysql_server
+	The location of your MySQL server; this is usually either 'localhost' or
+'127.0.0.1'.
+
+$mysql_user
+	The MySQL user to use for database access.  The user should have
+permission to select/insert/update from the accompanying  tables.
+
+$mysql_pass
+	The MySQL password for the aforementioned user.
+
+$mysql_db
+	The MySQL database to use.  Note that you should either run the
+accompanying import script against this database or create the tables manually
+before running the importer.
+
+$mysql_stat_table
+	By default, 'github_stat'.  If you change this, you will have to
+create the table manually or modify the import script yourself.
+
+$mysql_play_table
+	By default, 'github_activity'.  If you change this, you will have to
+create the table manually or modify the import script yourself.
+
+$debug
+	By default, 0.  Set this to 1 to see additional logging output to
+syslog, such as song data to be imported.
+
+
+
+github_pull.pl EXECUTION
+------------------------
+
+Ideally, you'll want to invoke github_pull.pl via cron.  I run the following:
+
+	* */12 * * * /usr/bin/perl -CS /home/akairenn/cron-scripts/github_pull.pl > /dev/null 2>&1
+
+The -CS is vaguely important if you want UTF8 support to work properly.  This
+cron line runs the importer every two hours.  It is possible to miss data if
+you're doing a lot of commits; if that's the case, you can run the import
+script more often.
+
+Keep in mind that the script should not reside within the document root of a
+website.
+
+
+
+QUICK'N DIRTY WORDPRESS INTEGRATION
+-----------------------------------
+
+While the point of dumping this data to MySQL is that it can be easily used by
+anything, I started out with this in order to display my public github
+activity on my blaaagh.
+
+I added the following to my theme's functions.php:
+
+	function github_get_activity($num = 5) {
+		global $wpdb;
+
+		// Set the limit clause, if we got a limit
+		$num = (int) $num;
+		if ($num) {
+			$limit = "LIMIT $num";
+		}
+
+		$sql = "SELECT github_title, github_content, github_time FROM github_activity ORDER BY github_time DESC $limit";
+		$result = $wpdb->get_results($sql, ARRAY_A);
+
+		return $result ? $result : array();
+	}
+
+I then invoked the function and formatted it in the actual theme template:
+
+	<div id="github">
+		<h3>Github</h3>
+		<ul>
+		<?php
+			$recent_gits = github_get_activity(5);
+			foreach($recent_gits as $git) {
+				echo '<li>';
+				echo '<div><span class="time">' . date('m.d.Y H:i', $git["github_time"]) . '</span>:</div>';
+				echo '<div>' . $git["github_title"] . '</div>';
+				if($git["github_content"]) {
+					echo '<div><em>' . $git["github_content"] . '</em></div>'; }
+				echo '</li>';
+			}
+		?>
+		</ul>
+	</div>
+
+This invocation grabs the latest five activity entries from the database, 
+and shoves them into list item elements.  I'm using a format of:
+
+	MM.DD.YYYY HH:MM:
+	ACTIVITY TITLE
+	(if present) ACTIVITY CONTENT
+
+You can display and style the data however you'd like.
