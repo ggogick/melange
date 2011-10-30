@@ -120,7 +120,7 @@ github_pull.pl EXECUTION
 
 Ideally, you'll want to invoke github_pull.pl via cron.  I run the following:
 
-	* */2 * * * /usr/bin/perl -CS /home/akairenn/cron-scripts/github_pull.pl > /dev/null 2>&1
+	0 */2 * * * /usr/bin/perl -CS /home/akairenn/cron-scripts/github_pull.pl > /dev/null 2>&1
 
 The -CS is vaguely important if you want UTF8 support to work properly.  This
 cron line runs the importer every two hours.  It is possible to miss data if
