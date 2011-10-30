@@ -124,13 +124,16 @@ for my $k1 (sort keys %{$data->{entry}}) {
 	# returns a bunch of crufty and broken-link filled HTML.  I've thus decided to only
 	# capture anything within a pair of blockquote tags.  It's a tradeoff that provides
 	# detail where needed, while avoiding unnecessary cruft.
-	$content = "null";
+	$content = '';
 	$contbuf = $data->{entry}->{$k1}->{content}->{content};
 	$contbuf =~ s/\n//g;
 	$contbuf =~ s/\r//g;
-	if($contbuf =~ m/(<blockquote>.+<\/blockquote>)/) {
-		$content = $1;
-		$content =~ s/<blockquote>/.../g;
+	while($contbuf =~ /(<blockquote>.+?<\/blockquote>)/) {
+		$content = $content . $1;
+		$contbuf =~ s/<blockquote>.+?<\/blockquote>//;
+	}
+	if($content ne '') {
+		$content =~ s/<blockquote>/&hellip;/g;
 		$content =~ s/<\/blockquote>/ /g;
 	}
 
@@ -152,7 +155,7 @@ for my $k1 (sort keys %{$data->{entry}}) {
 			logent('info', "$time > $lasttime, inserting activity");
 		}
 		# Insert our activity record
-		if($content ne 'null') {
+		if($content ne '') {
 			$query = $dbh->prepare("INSERT INTO $mysql_activity_table (github_title, github_content, github_time) VALUES ($title, $content, $time)");
 		} else {
 			$query = $dbh->prepare("INSERT INTO $mysql_activity_table (github_title, github_time) VALUES ($title, $time)");
