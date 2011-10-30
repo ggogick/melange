@@ -130,8 +130,8 @@ for my $k1 (sort keys %{$data->{entry}}) {
 	$contbuf =~ s/\r//g;
 	if($contbuf =~ m/(<blockquote>.+<\/blockquote>)/) {
 		$content = $1;
-		$content =~ s/<blockquote>//g;
-		$content =~ s/<\/blockquote>//g;
+		$content =~ s/<blockquote>/.../g;
+		$content =~ s/<\/blockquote>/ /g;
 	}
 
 	if($debug != 0) {
