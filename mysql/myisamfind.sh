@@ -89,7 +89,7 @@ do
 	MYISAM_TABLES="${MYISAM_TABLES}${DATABASE}/${TABLE}\n";
 done
 
-if [ ! -n "$MYISAMTABLES" ]; then
+if [ -n "$MYISAM_TABLES" ]; then
 	echo "The following MyISAM tables were found:"
 	echo ""
 	echo "Database/Table"
