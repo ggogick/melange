@@ -79,7 +79,7 @@ $dbh = DBI->connect('DBI:mysql:'.$mysql_db.':'.$mysql_server, $mysql_user, $mysq
 $query = $dbh->prepare("SELECT stat_val FROM $mysql_stat_table WHERE stat_name = 'newest' LIMIT 1");
 $query->execute;
 if($dbh->errstr) {
-	fatality(1, "Could not access table $mysql_stat_table: $dbh->errstr");
+	fatality(1, "Could not access table $mysql_stat_table: \$dbh->errstr");
 }
 $query->bind_columns(\$lasttime);
 while($query->fetch) {
@@ -89,7 +89,7 @@ $query->finish;
 $query = $dbh->prepare("SELECT count(*) FROM $mysql_activity_table");
 $query->execute;
 if($dbh->errstr) {
-	fatality(2, "Could not access table $mysql_activity_table: $dbh->errstr");
+	fatality(2, "Could not access table $mysql_activity_table: \$dbh->errstr");
 }
 $query->finish;
 
@@ -162,7 +162,7 @@ for my $k1 (sort keys %{$data->{entry}}) {
 		}
 		$query->execute;
 		if($dbh->errstr) {
-			fatality(5, "Could not insert into $mysql_activity_table: $dbh->errstr");
+			fatality(5, "Could not insert into $mysql_activity_table: \$dbh->errstr");
 		}
 		$query->finish;
 
@@ -174,7 +174,7 @@ for my $k1 (sort keys %{$data->{entry}}) {
 			$query = $dbh->prepare("UPDATE $mysql_stat_table SET stat_val = $time WHERE stat_name = 'newest'");
 			$query->execute;
 			if($dbh->errstr) {
-				fatality(6, "Could not update 'newest' record in $mysql_stat_table: $dbh->errstr");
+				fatality(6, "Could not update 'newest' record in $mysql_stat_table: \$dbh->errstr");
 			}
 			$query->finish;
 			$nlasttime = $time;

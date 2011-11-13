@@ -86,7 +86,7 @@ $dbh = DBI->connect('DBI:mysql:'.$mysql_db.':'.$mysql_server, $mysql_user, $mysq
 $query = $dbh->prepare("SELECT stat_val FROM $mysql_stat_table WHERE stat_name = 'newest' LIMIT 1");
 $query->execute;
 if($dbh->errstr) {
-	fatality(1, "Could not access table $mysql_stat_table: $dbh->errstr");
+	fatality(1, "Could not access table $mysql_stat_table: \$dbh->errstr");
 }
 $query->bind_columns(\$lt);
 while($query->fetch) {
@@ -96,7 +96,7 @@ $query->finish;
 $query = $dbh->prepare("SELECT count(*) FROM $mysql_play_table");
 $query->execute;
 if($dbh->errstr) {
-	fatality(2, "Could not access table $mysql_play_table: $dbh->errstr");
+	fatality(2, "Could not access table $mysql_play_table: \$dbh->errstr");
 }
 $query->finish;
 
@@ -107,7 +107,7 @@ $wolftime = $lasttime - $trim;
 $query = $dbh->prepare("DELETE FROM $mysql_play_table WHERE play_time < $wolftime");
 $query->execute;
 if($dbh->errstr) {
-	fatality(3, "Could not delete from $mysql_play_table: $dbh->errstr");
+	fatality(3, "Could not delete from $mysql_play_table: \$dbh->errstr");
 }
 if($debug != 0) {
 	logent('info', "Purged " . $query->rows . " records from $mysql_play_table");
