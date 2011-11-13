@@ -144,9 +144,9 @@ for my $k1 (sort keys %{$data->{entry}}) {
 	# dbh->quote would be far better here, but the DBD-MySQL package on CentOS/RHEL5 is
 	# too old to support UTF8 properly.   May be wise to check for other potential problem
 	# characters here.
-	$title =~ s/'/\\'/; $title =~ s/"/\\"/; $title = "'" . $title . "'";
+	$title =~ s/'/\\'/g; $title =~ s/"/\\"/g; $title = "'" . $title . "'";
 	if($content ne 'null') {
-		$content =~ s/'/\\'/; $content =~ s/"/\\"/; $content = "'" . $content . "'";
+		$content =~ s/'/\\'/g; $content =~ s/"/\\"/g; $content = "'" . $content . "'";
 	}
 
 	# Time check.  If the incoming activity was later than our last recorded time, we'll add it.

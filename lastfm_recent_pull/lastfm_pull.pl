@@ -130,10 +130,10 @@ for my $k1 (sort keys %{$data->{recenttracks}->{track}}) {
 	# dbh->quote would be far better here, but the DBD-MySQL package on CentOS/RHEL5 is 
 	# too old to support UTF8 properly.  May be wise to check for other potential problem 
 	# characters here, but I'm pretty sure Last.fm isn't going to try an injection attack. :p
-	$song =~ s/'/\\'/; $song =~ s/"/\\"/; $song = "'" . $song . "'";
-	$artist =~ s/'/\\'/; $artist =~ s/"/\\"/; $artist = "'" . $artist . "'";
-	$album =~ s/'/\\'/; $album =~ s/"/\\"/; $album = "'" . $album . "'";
-	$url =~ s/'/\\'/; $url =~ s/"/\\"/; $url = "'" . $url . "'";
+	$song =~ s/'/\\'/g; $song =~ s/"/\\"/g; $song = "'" . $song . "'";
+	$artist =~ s/'/\\'/g; $artist =~ s/"/\\"/g; $artist = "'" . $artist . "'";
+	$album =~ s/'/\\'/g; $album =~ s/"/\\"/g; $album = "'" . $album . "'";
+	$url =~ s/'/\\'/g; $url =~ s/"/\\"/g; $url = "'" . $url . "'";
 
 	# Time check.  If the incoming song was played later than our last recorded time, we'll add it.
 	if($played > $lasttime) {
