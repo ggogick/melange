@@ -128,8 +128,8 @@ foreach (@$decoded_json) {
 	# dbh->quote would be far better here, but the DBD-MySQL package on CentOS/RHEL5 is
 	# too old to support UTF8 properly.  May be wise to check for other potential problem
 	# characters here.
-	$text =~ s/'/\\'/; $text =~ s/"/\\"/; $text = "'" . $text . "'";
-	$url_text =~ s/'/\\'/; $url_text =~ s/"/\\"/; $url_text = "'" . $url_text . "'";
+	$text =~ s/'/\\'/g; $text =~ s/"/\\"/g; $text = "'" . $text . "'";
+	$url_text =~ s/'/\\'/g; $url_text =~ s/"/\\"/g; $url_text = "'" . $url_text . "'";
 
 	# Time check.  If the incoming tweet was later than our last recorded time, we'll add it.
 	if($time > $lasttime) {
