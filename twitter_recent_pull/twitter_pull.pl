@@ -118,8 +118,8 @@ foreach (@$decoded_json) {
 
 	# Translate url_text 
 	# Presently translates #example, @example into proper URLs
-	$url_text =~ s/ #(.+?) / <a href="http:\/\/twitter.com\/#\!\/search?q=%23\1">#\1<\/a> /g;
-	$url_text =~ s/ @(.+?) / <a href="http:\/\/twitter.com\/\1">@\1<\/a> /g;
+	$url_text =~ s/ #(.+?)(\s|\z)/ <a href="http:\/\/twitter.com\/#\!\/search?q=%23\1">#\1<\/a> /g;
+	$url_text =~ s/ @(.+?)(\s|\z)/ <a href="http:\/\/twitter.com\/\1">@\1<\/a> /g;
 
 	if($debug != 0) {
 		logent('info', "New tweet: $time - $text");
